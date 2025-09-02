@@ -9,6 +9,7 @@ type DB = {
   campaigns: Campaign[];
   templates: EmailTemplate[];
   automations: Automation[];
+  updatedAt?: number;
 };
 
 const KEY = "tsync-db-v1";
@@ -24,7 +25,7 @@ function migrate(db: DB): DB {
   return { ...db, templates: Array.from(byId.values()) };
 }
 
-function load(): DB {
+function loadLocal(): DB {
   if (typeof window === "undefined") return { contacts: [], lists: [], campaigns: [], templates: [], automations: [] };
   try {
     const raw = localStorage.getItem(KEY);
@@ -47,15 +48,47 @@ function load(): DB {
   }
 }
 
-function save(db: DB) {
+function saveLocal(db: DB) {
   if (typeof window === "undefined") return;
   localStorage.setItem(KEY, JSON.stringify(db));
 }
 
 export function useDB() {
   const [db, setDb] = useState<DB>({ contacts: [], lists: [], campaigns: [], templates: [], automations: [] });
-  useEffect(() => { setDb(load()); }, []);
-  useEffect(() => { save(db); }, [db]);
+  // Initial load: try server DB first, fallback to local
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/db", { cache: "no-store" });
+        if (res.ok) {
+          const server = (await res.json()) as DB;
+          if (!cancelled) {
+            const local = loadLocal();
+            // prefer the one with newer updatedAt or with more contacts if ts missing
+            const serverScore = server.updatedAt ?? 0;
+            const localScore = local.updatedAt ?? 0;
+            const pick = serverScore === 0 && localScore === 0
+              ? (server.contacts?.length || 0) >= (local.contacts?.length || 0) ? server : local
+              : (serverScore >= localScore ? server : local);
+            setDb(migrate(pick));
+            return;
+          }
+        }
+      } catch {}
+      if (!cancelled) setDb(loadLocal());
+    })();
+    return () => { cancelled = true; };
+  }, []);
+  // Persist locally and mirror to server on any change
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const withTs = { ...db, updatedAt: Date.now() } as DB;
+    saveLocal(withTs);
+    // fire-and-forget server sync
+    fetch("/api/db", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(withTs) })
+      .catch(() => {});
+  }, [db]);
   return [db, setDb] as const;
 }
 
