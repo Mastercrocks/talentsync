@@ -13,11 +13,22 @@ type DB = {
 
 const KEY = "tsync-db-v1";
 
+function migrate(db: DB): DB {
+  // Ensure builtin templates exist and are up to date; remove old employer template id
+  const withoutOldEmployer = db.templates.filter(t => t.id !== "tpl_employer_free");
+  // Replace or insert current builtin templates by id to refresh content
+  const byId = new Map<string, EmailTemplate>(withoutOldEmployer.map(t => [t.id, t]));
+  for (const bt of builtinTemplates) {
+    byId.set(bt.id, bt);
+  }
+  return { ...db, templates: Array.from(byId.values()) };
+}
+
 function load(): DB {
   if (typeof window === "undefined") return { contacts: [], lists: [], campaigns: [], templates: [], automations: [] };
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) return migrate(JSON.parse(raw));
     // seed defaults
     const seeded: DB = {
       contacts: [],
@@ -30,7 +41,7 @@ function load(): DB {
       automations: [],
     };
     localStorage.setItem(KEY, JSON.stringify(seeded));
-    return seeded;
+    return migrate(seeded);
   } catch {
     return { contacts: [], lists: [], campaigns: [], templates: [], automations: [] };
   }

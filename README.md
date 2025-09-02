@@ -1,3 +1,19 @@
+# TalentSync – Email + CRM
+
+To enable real email sending and tracking:
+
+- Create a Resend account and get an API key.
+- Set environment variables in a `.env.local` at project root:
+
+```
+RESEND_API_KEY=your_resend_key
+FROM_EMAIL=you@yourdomain.com
+```
+
+- Start the app and create a campaign. Use "Send now" to deliver.
+
+Notes:
+- Open/click tracking endpoints are provided. Clicks redirect via `/api/track/click` and opens load a tracking pixel. For production-grade tracking with authenticated webhooks and server DB storage, wire these endpoints to a real database.
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started

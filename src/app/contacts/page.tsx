@@ -12,6 +12,7 @@ export default function ContactsPage() {
   const [db, setDb] = useDB();
   const [tab, setTab] = useState<"students" | "employers">("students");
   const [importSummary, setImportSummary] = useState<string | null>(null);
+  const [savedAt, setSavedAt] = useState<number | null>(null);
   const list = useMemo(()=> db.lists.find(l=>l.type===tab), [db.lists, tab]);
   // Ensure default lists exist (run once on mount and when lists change)
   useEffect(() => {
@@ -22,6 +23,13 @@ export default function ContactsPage() {
       upsertList(db, setDb, { id: 'list_employers', name: 'Employers', type: 'employers', contactIds: [] });
     }
   }, [db.lists, db, setDb]);
+
+  // Show a simple auto-save indicator when any change is persisted
+  useEffect(() => {
+    // Debounce a little to avoid flashing during rapid updates
+    const t = setTimeout(() => setSavedAt(Date.now()), 150);
+    return () => clearTimeout(t);
+  }, [db]);
 
   function addSample() {
     const id = uid("c");
@@ -111,7 +119,7 @@ export default function ContactsPage() {
   const finalList = { ...list, contactIds: uniqueIds };
     const finalLists = db.lists.map(l => l.id === finalList.id ? finalList : l);
   setDb({ ...db, contacts: finalContacts, lists: finalLists });
-  setImportSummary(`Imported ${rows.length} rows → added ${added}, updated ${updatedCount}, skipped ${skipped}`);
+  setImportSummary(`Imported ${rows.length} rows → added ${added}, updated ${updatedCount}, skipped ${skipped} • Saved`);
   }
 
   function onAddOne(c: { name?: string; phone?: string; email: string }) {
@@ -131,7 +139,10 @@ export default function ContactsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Contacts</h1>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-3">
+          {savedAt && (
+            <span className="text-xs text-[var(--muted-foreground)]">Auto-saved {new Date(savedAt).toLocaleTimeString()}</span>
+          )}
           <button onClick={addSample} className="rounded-md bg-[var(--ts-primary)] px-3 py-2 text-sm text-white">Add Sample</button>
           <CsvImport onImport={onImport} templateHeaders={tab==='students' ? ["email","name","phone","jobTitle","skills","location"] : ["email","name","phone","companyName","jobTitle"]} />
         </div>
