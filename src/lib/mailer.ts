@@ -4,7 +4,7 @@ import type { CreateEmailResponse } from "resend";
 // Minimal mailer wrapper; requires RESEND_API_KEY and FROM_EMAIL in env
 const resendKey = process.env.RESEND_API_KEY || "";
 const fromEmail = process.env.FROM_EMAIL || "no-reply@talentsync.local";
-export const mailer = new Resend(resendKey);
+export const mailer: Resend | null = resendKey ? new Resend(resendKey) : null;
 
 function rewriteLinksForTracking(html: string, campaignId: string, contactId: string) {
   return html
@@ -17,6 +17,10 @@ function rewriteLinksForTracking(html: string, campaignId: string, contactId: st
 export async function sendEmail(to: string, subject: string, html: string) {
   if (!resendKey) {
     // In dev without key, pretend ok
+    return { id: `dev_${Math.random().toString(36).slice(2, 8)}` } as const;
+  }
+  if (!mailer) {
+    // Should not happen because of early return above, but type guard for safety
     return { id: `dev_${Math.random().toString(36).slice(2, 8)}` } as const;
   }
   const res: CreateEmailResponse = await mailer.emails.send({ from: fromEmail, to, subject, html });
