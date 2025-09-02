@@ -32,7 +32,7 @@ export async function POST(req: Request) {
     try {
       await sendEmail(r.email, body.subject, html);
       sent++;
-    } catch (e) {
+  } catch {
       // continue
     }
   }

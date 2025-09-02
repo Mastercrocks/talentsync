@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import type { CreateEmailResponse } from "resend";
 
 // Minimal mailer wrapper; requires RESEND_API_KEY and FROM_EMAIL in env
 const resendKey = process.env.RESEND_API_KEY || "";
@@ -18,8 +19,8 @@ export async function sendEmail(to: string, subject: string, html: string) {
     // In dev without key, pretend ok
     return { id: `dev_${Math.random().toString(36).slice(2, 8)}` } as const;
   }
-  const res = await mailer.emails.send({ from: fromEmail, to, subject, html });
-  if ((res as any).error) throw new Error((res as any).error.message || "send failed");
+  const res: CreateEmailResponse = await mailer.emails.send({ from: fromEmail, to, subject, html });
+  if (res.error) throw new Error(res.error.message || "send failed");
   return res;
 }
 
