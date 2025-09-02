@@ -1,0 +1,41 @@
+@import "tailwindcss";
+
+/* Inter font is loaded via next/font in layout */
+
+:root {
+  /* Requested palette */
+  --ts-primary: #2563EB; /* Blue */
+  --ts-white: #FFFFFF;
+  --ts-muted: #F3F4F6; /* Light Gray */
+
+  --background: var(--ts-white);
+  --foreground: #0f172a; /* slate-900 */
+  --card: var(--ts-white);
+  --card-foreground: #0f172a;
+  --muted: var(--ts-muted);
+  --muted-foreground: #475569; /* slate-600 */
+  --border: #e5e7eb; /* gray-200 */
+}
+
+.dark {
+  --background: #0b1220; /* dark navy */
+  --foreground: #e2e8f0; /* slate-200 */
+  --card: #0f172a; /* slate-900 */
+  --card-foreground: #e2e8f0;
+  --muted: #111827; /* gray-900 */
+  --muted-foreground: #94a3b8; /* slate-400 */
+  --border: #1f2937; /* gray-800 */
+}
+
+html, body, #__next {
+  height: 100%;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+/* Smooth scroll */
+html { scroll-behavior: smooth; }
